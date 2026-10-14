@@ -1,0 +1,17 @@
+
+seed: 42
+
+split:
+  test_size: 0.2
+
+cross_validation:
+  folds: 5
+
+model:
+  logistic_regression:
+    max_iter: 2000
+    class_weight: balanced
+  random_forest:
+    n_estimators: 120
+    max_depth: 10
+    class_weight: balanced

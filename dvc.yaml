@@ -1,0 +1,18 @@
+
+stages:
+  train:
+    cmd: python training/train.py --data-path data/raw/breast_cancer.csv --output-dir artifacts --model-version 1.0.0
+    deps:
+      - training/train.py
+      - data/raw/breast_cancer.csv
+    params:
+      - seed
+      - split
+      - cross_validation
+      - model
+    outs:
+      - artifacts/model.joblib
+      - artifacts/model_card.json
+    metrics:
+      - artifacts/metrics.json:
+          cache: false

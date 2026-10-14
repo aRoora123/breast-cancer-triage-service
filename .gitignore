@@ -20,3 +20,6 @@ data/raw/*.csv
 
 # Local experiment outputs
 mlruns/
+
+# Trained model artifacts
+artifacts/
