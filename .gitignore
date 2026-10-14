@@ -1,0 +1,22 @@
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.python-version
+
+# IDE
+.idea/
+
+# Dataset managed by DVC
+data/raw/*.csv
+
+# Environment variables and secrets
+.env
+
+# DVC cache and temporary files
+.dvc/cache/
+.dvc/tmp/
+
+# Local experiment outputs
+mlruns/
