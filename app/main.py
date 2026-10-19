@@ -3,7 +3,7 @@ import logging
 import os
 from contextlib import asynccontextmanager
 from pathlib import Path
-
+# ml imports
 import joblib
 import sklearn
 from fastapi import FastAPI
@@ -76,6 +76,7 @@ def health():
 
 
 @app.post("/predict")
+# MODEL prediction
 def predict(payload: PredictionInput):
     values = payload.model_dump()
     feature_order = app.state.model_card["feature_names"]
@@ -122,5 +123,5 @@ def model_info():
 
 @app.get("/stats")
 def stats():
-    # Redis request counting will be added in Milestone 4.
+    # redis req in milestone 4 here
     return {"count": 0}
