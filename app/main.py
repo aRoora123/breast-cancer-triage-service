@@ -3,6 +3,7 @@ import logging
 import os
 from contextlib import asynccontextmanager
 from pathlib import Path
+import redis
 # ml imports
 import joblib
 import sklearn
@@ -21,6 +22,8 @@ MODEL_CARD_PATH = Path(
     os.getenv("MODEL_CARD_PATH", "artifacts/model_card.json")
 )
 THRESHOLD = float(os.getenv("DECISION_THRESHOLD", "0.5"))
+REDIS_HOST = os.getenv("REDIS_HOST")
+REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
 
 FEATURE_NAMES = [
     name.replace(" ", "_")
@@ -60,7 +63,24 @@ async def lifespan(app: FastAPI):
         app.state.model_card = json.load(file)
 
     logger.info("Model loaded from %s", MODEL_PATH)
+    app.state.redis = None
+    if REDIS_HOST:
+        app.state.redis = redis.Redis(
+            host=REDIS_HOST,
+            port=REDIS_PORT,
+            db=0,
+            decode_responses=True,
+            socket_connect_timeout=2,
+            socket_timeout=2,
+        )
+        try:
+            app.state.redis.ping()
+            logger.info("Redis connected")
+        except redis.RedisError:
+            logger.warning("Redis is unavailable")
     yield
+    if app.state.redis is not None:
+        app.state.redis.close()
 
 
 app = FastAPI(
@@ -93,6 +113,11 @@ def predict(payload: PredictionInput):
         if malignant_probability >= THRESHOLD
         else "benign"
     )
+    if app.state.redis is not None:
+        try:
+            app.state.redis.incr("prediction_count")
+        except redis.RedisError:
+            logger.warning("Could not update prediction count in Redis")
 
     return {
         "label": label,
@@ -123,5 +148,11 @@ def model_info():
 
 @app.get("/stats")
 def stats():
-    # redis req in milestone 4 here
-    return {"count": 0}
+    if app.state.redis is None:
+        return {"count": None, "error": "Redis not configured"}
+    try:
+        count = int(app.state.redis.get("prediction_count") or 0)
+        return {"count": count}
+    except redis.RedisError:
+        logger.warning("Could not read prediction count from Redis")
+        return {"count": None, "error": "Redis unavailable"}
